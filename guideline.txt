@@ -1,0 +1,204 @@
+**Use SystemVerilog-Specific Data Types:**
+
+**Do** use `logic`, `bit`, `byte`, `int`, `longint`, `shortint`, and `enum`.
+*Example:* `logic [7:0] data_bus;`
+**Don't** use Verilog data types like `reg` and `wire`.
+*Avoid:* `reg [7:0] data_bus;`
+
+**Do** Verify that arrays, are properly declared and initialized. Ensure any index used, like i, is valid, within bounds, and that index variables are properly declared and within scope.
+**Do** Declare variables, within the correct context, ensuring they are used inside procedural blocks like always, initial, or functions/tasks to maintain clarity and avoid conflicts.
+**Don't** Place variable declarations in contexts where they are not allowed, such as within continuous assignments or outside any procedural block, and avoid using undeclared or out-of-scope variables as indices.
+*Example*
+module dut;
+logic [31:0] inAxi4St [0:7]; // Declare inAxi4St as an array
+integer i;
+ 
+initial begin
+    for (i = 0; i < 8; i++) begin
+        inAxi4St[i] = i * 10; // Use valid index within bounds
+    end
+end
+endmodule
+
+**Utilize Specialized Procedural Blocks:**
+
+**Do** use `always_ff` for sequential logic, `always_comb` for combinational logic, and `always_latch` for latches.
+*Example:*
+```systemverilog
+always_ff @(posedge clk) begin
+  counter <= counter + 1;
+end
+```
+**Don't** use the generic `always` block.
+*Avoid:*
+```verilog
+always @(posedge clk) begin
+  counter <= counter + 1;
+end
+```
+
+**Implement Interfaces and Modports:**
+
+**Do** use `interface` constructs for module communication.
+*Example:*
+```systemverilog
+interface bus_if(input logic clk);
+  logic [7:0] data;
+  modport Master (output data);
+  modport Slave  (input  data);
+endinterface
+```
+**Don't** rely solely on traditional port lists.
+*Avoid:* Defining all ports individually in each module without using interfaces.
+
+**Leverage Object-Oriented Programming Features:**
+
+**Do** use classes, inheritance, and polymorphism for testbenches and verification environments.
+*Example:*
+```systemverilog
+class Packet;
+  rand bit [7:0] addr;
+  rand bit [7:0] data;
+endclass
+```
+**Don't** ignore OOP features when they can enhance code reusability and scalability.
+
+**Use Proper Assignment Operators:**
+
+**Do** use non-blocking assignments (`<=`) in sequential logic and blocking assignments (`=`) in combinational logic.
+*Sequential Logic Example:*
+```systemverilog
+always_ff @(posedge clk) begin
+  q <= d;
+end
+```
+*Combinational Logic Example:*
+```systemverilog
+always_comb begin
+  sum = a + b;
+end
+```
+**Don't** mix blocking and non-blocking assignments incorrectly in the Same Always Block
+Mixing, these can lead to simulation mismatches and hard-to-debug issues.
+example 
+always_ff @(posedge clk) begin
+    a <= b; // Non-blocking
+    // c = d; // Mixing with blocking in the same block is discouraged
+end
+*Avoid using `=` in sequential logic and `<=` in combinational logic.*
+
+**Include Assertions for Verification:**
+
+**Do** use `assert`, `assume`, and `cover` statements to validate design correctness.
+*Example:*
+```systemverilog
+always_ff @(posedge clk) begin
+  assert(counter <= MAX_VALUE) else $error("Counter overflow");
+end
+```
+**Don't** omit assertions when they can help catch errors early.
+
+**Avoid Deprecated or Obsolete Features:**
+
+**Do** adhere to the latest SystemVerilog standards.
+**Don't** use outdated Verilog features like implicit net declarations or certain gate-level primitives.
+
+**Utilize Enhanced Control Flow Constructs:**
+
+**Do** use `unique`, `priority`, and `expect` where appropriate.
+*Example:*
+```systemverilog
+unique case(opcode)
+  4'b0000: result = a + b;
+  4'b0001: result = a - b;
+  // ...
+endcase
+```
+**Don't** rely only on basic `if` and `case` statements when enhanced versions can provide clarity.
+
+**Adhere Strictly to SystemVerilog Syntax:**
+
+**Do** ensure all code complies with SystemVerilog syntax and semantics.
+**Don't** mix Verilog and SystemVerilog syntax improperly.
+*Avoid combining `reg` with `always_ff`, etc.*
+
+**Organize Code Using Packages and Namespaces:**
+
+**Do** use `package` declarations to encapsulate and reuse code.
+*Example:*
+```systemverilog
+package math_pkg;
+  function automatic int add(int a, int b);
+    return a + b;
+  endfunction
+endpackage
+```
+**Don't** define all code in a single scope without modularization.
+
+**Summary:**
+
+- Always prefer SystemVerilog constructs over Verilog ones to take full advantage of the language's features.
+- Be mindful of the proper use of data types, procedural blocks, and assignment operators.
+- Incorporate object-oriented programming and advanced verification features when appropriate.
+- Avoid deprecated features and ensure code complies with the latest standards.
+- Organize code effectively using packages, interfaces, and enhanced control flow constructs.
+
+**Example of Correct SystemVerilog Code:**
+
+```systemverilog
+package fifo_pkg;
+  parameter int DEPTH = 16;
+  class FIFO;
+    logic [7:0] mem [DEPTH];
+    int head;
+    int tail;
+
+    function void write(logic [7:0] data);
+      if (!full()) begin
+        mem[tail] = data;
+        tail = (tail + 1) % DEPTH;
+      end else begin
+        $error("FIFO Overflow");
+      end
+    endfunction
+
+    function logic [7:0] read();
+      logic [7:0] data;
+      if (!empty()) begin
+        data = mem[head];
+        head = (head + 1) % DEPTH;
+      end else begin
+        $error("FIFO Underflow");
+      end
+      return data;
+    endfunction
+
+    function bit full();
+      return ((tail + 1) % DEPTH) == head;
+    endfunction
+
+    function bit empty();
+      return head == tail;
+    endfunction
+  endclass
+endpackage
+
+**Don't** Access Out-of-bounds Array Indices
+Ensure that you only access valid indices within an array's declared range.
+Example : 
+logic [3:0] array;
+// Correct usage
+logic value = array[2]; // Valid index
+// Incorrect usage
+// logic value = array[4]; // Out of bounds, illegal
+
+**Do** Include a Default Case in Case Statements to handle unexpected values.
+Example
+always_comb begin
+    case (state)
+        2'b00: next_state = 2'b01;
+        2'b01: next_state = 2'b10;
+        default: next_state = 2'b00; // Default case
+    endcase
+end
+ 
