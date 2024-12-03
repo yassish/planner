@@ -1,23 +1,22 @@
 {
-  "category": "MoA",
-  "subsample_size": false,
-  "num_passes": 10,
-  "max_tokens": 1024,
+  "selected_indices": false,
+  "num_passes": 1,
+  "max_tokens": 6000,
   "temperature": 0.9,
-  "num_parallel_calls": 4,
-  "layers": 3,
+  "num_parallel_calls": 5,
+  "max_calls" : 2,
+  "dataset":"demo",
+  "dataset_path": "./df_demo_20241113.pkl",
+  "layers": 8,
   "seed": 42,
-  "reference_models": [
-    "together_llama31_405b_turbo"],
-  "layer_prompts":[ "What is the main functionality of this hardware module? What problem does it solve in the digital design?"
-,"What is the high-level block diagram?"
-,"How will data be processed and transformed between input and output? What registers and combinational logic are needed? What are the clocking, latency and throughput requirements? Are there specific timing constraints?"
-,"What signals need to be reset? Should reset be synchronous or asynchronous?"
-,"What aspects should be parameterizable? What are reasonable default values?"
-,"What pipeline stages are needed to meet timing? Are there potential timing bottlenecks? What paths might need special attention?"
-,"What test scenarios are needed? How will assertions be used to catch issues?"
-,"What distinct functional blocks or submodules would logically divide this design?For each submodule identified, what specific task does it perform?"
-,"Write a System verilog code for each of the submodules specified. What are the critical interfaces between these submodules?"],
-"pre_prompt" : "",
-"system_prompt":""
+  "model_name": "google_claude_3.5_sonnet_v2",
+  "layer_prompts":[
+   "What is the main functionality of this hardware module? What is the high-level block diagram?"
+  ,"What aspects should be parameterizable? What are reasonable default values?"
+  ,"How will data be processed and transformed between input and output? What registers and combinational logic are needed?"
+  ,"What are the clocking, latency and throughput requirements? Are there specific timing constraints? What signals need to be reset? Should reset be synchronous or asynchronous?"
+  ,"What test scenarios are needed? How will assertions be used to catch issues?"
+  ,"What distinct functional blocks or submodules would logically divide this design? For each submodule identified, what specific task does it perform?"
+  ,"Write a System verilog code for each of the submodules specified. What are the critical interfaces between these submodules?"],
+"pre_prompt" : ""
 }
