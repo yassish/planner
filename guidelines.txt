@@ -1,0 +1,169 @@
+COMPREHENSIVE SYSTEMVERILOG CODING GUIDELINES
+
+1. MODULE NAMING & PORTS
+- If module name is not specified, call it "dut"
+- If clock port name not specified, use "clock" 
+- If polarity not specified, signals should be active high
+- For multiple clock domains, append domain to clock/reset names (e.g., clockRead, clockWrite, resetRead, resetWrite)
+- Provide minimum required functionality - do not add extra features or ports
+- Only include clock/reset when sequential circuit (internal state feedback) is required
+
+2. DATA TYPES
+DO use SystemVerilog types: logic, bit, byte, int, longint, shortint, and enum
+Example:
+logic [7:0] data_bus;
+
+DON'T use Verilog data types like reg and wire
+Avoid:
+reg [7:0] data_bus;  // BAD: uses Verilog reg type
+
+3. ARRAYS & INDICES
+DO properly declare and initialize arrays with valid indices:
+module dut;
+    logic [31:0] inAxi4St [0:7]; // Declare array with bounds  
+    integer i;
+    
+    initial begin
+        for (i = 0; i < 8; i++) begin
+            inAxi4St[i] = i * 10; // Valid index within bounds
+        end
+    end
+endmodule
+
+4. ALWAYS BLOCKS AND SIGNAL ASSIGNMENTS
+
+a) Use appropriate always blocks:
+// Sequential logic
+always_ff @(posedge clock) begin
+    q <= d;
+end
+
+// Combinational logic 
+always_comb begin
+    sum = a + b;
+end
+
+b) Ready/Valid Handshake Pattern:
+logic value_d, value_q;
+
+always_comb begin
+    value_d = value_q; // default for value_d is current value_q
+    if (some_condition) begin
+        value_d = 1'b0;
+    end else if (some_other_condition) begin
+        value_d = 1'b1;
+    end
+end
+
+always_ff @(posedge clock) begin
+    if (reset) value_q <= '0; // reset value
+    else value_q <= value_d; // update value_q
+end
+
+5. VARIABLE DECLARATIONS & SCOPE
+DO declare automatic variables in begin/end blocks with default values:
+always_comb begin
+    automatic logic [7:0] value = 2; // GOOD: automatic with default
+    if (some_condition) begin
+        automatic logic some_condition_hit = 1'b1; // GOOD
+    end
+end
+
+DON'T declare in for-loops:
+always_comb begin
+    for (int i = 0; i < 8; i++) begin
+        int idx = i + value; // BAD: declaration without automatic
+        automatic int good_idx = i + value; // BAD: even with automatic
+    end
+end
+
+6. ASSIGNMENT RULES
+
+a) Avoid multiple assignments:
+some_struct_type_t this_is_a_struct;
+
+assign this_is_a_struct = '0;
+assign this_is_a_struct.tvalid = 1'b1; // BAD: multiple assignment
+
+// GOOD Fix using intermediate signals:
+logic inst_tvalid;
+this_is_a_struct inst_data;
+
+my_module u_instance_of_my_module (
+    .clock(clock),
+    .reset(reset),
+    .output_valid(inst_tvalid),
+    .output_data(inst_data)
+);
+
+always_comb begin
+    this_is_a_struct = inst_data;
+    this_is_a_struct.tvalid = inst_tvalid; // OK: structured override
+end
+
+b) Avoid mixing blocking/non-blocking:
+logic foo;
+always_ff @(posedge clock) begin
+    if (reset) begin
+        foo <= '0;
+    end else begin
+        foo = 1'b1; // BAD: mixing <= and = 
+    end
+end
+
+7. ALWAYS_COMB BLOCK ORGANIZATION
+DO split always_comb blocks to avoid re-entering:
+
+// BAD: Single large block with dependencies
+always_comb begin
+    fifo_in.axi4st = inAxi4St;
+    fifo_in.error = inError;
+    fifo_push = inAxi4St.tvalid && inTready;
+    fifo_pop = outAxi4St.tvalid && outTready;
+    inTready = !fifo_full; // BAD: used before assignment
+end
+
+// GOOD: Split into multiple focused blocks
+always_comb begin
+    fifo_in.axi4st = inAxi4St;
+    fifo_in.error = inError;
+end
+
+always_comb begin
+    inTready = !fifo_full;
+end
+
+always_comb begin
+    fifo_push = inAxi4St.tvalid && inTready;
+    fifo_pop = outAxi4St.tvalid && outTready;
+end
+
+8. PROHIBITED CONSTRUCTS
+- No combinational loops:
+logic a, b, c;
+assign b = a;
+always_comb begin
+    a = b || c; // BAD: forms combinational loop
+end
+
+- No let statements
+- No classes
+- No implicit net declarations
+- No out-of-bounds array access
+
+9. BYTE/BIT CONVENTIONS
+- 1 Byte = 8 bits
+- For bus_width parameters, specify in bits:
+parameter int N = 32; // N is bits in bus_width
+logic [N-1:0] bus_width;
+localparam int B = (N + 7) / 8; // B is bytes in bus_width
+
+10. CASE STATEMENTS
+Always include default:
+always_comb begin
+    case (state)
+        2'b00: next_state = 2'b01;
+        2'b01: next_state = 2'b10;
+        default: next_state = 2'b00; // Required default
+    endcase
+end
