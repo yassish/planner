@@ -106,7 +106,9 @@ The `config.json` file controls the behavior of the code generator. Here's a com
    - `pre_prompt`: Final integration instruction
 
 > Note: Each layer prompt is designed to guide the LLM through a specific aspect of hardware design, from high-level functionality to detailed implementation.
+## Results of having retry in CoT 
 
+![Performance for each m odule](images/image.png)
 ## Usage
 
 Run the code generator:
