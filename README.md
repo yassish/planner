@@ -108,7 +108,7 @@ The `config.json` file controls the behavior of the code generator. Here's a com
 > Note: Each layer prompt is designed to guide the LLM through a specific aspect of hardware design, from high-level functionality to detailed implementation.
 ## Results of having retry in CoT 
 
-![Performance for each m odule](images/image.png)
+![Performance for each module](images/perf_retry.png)
 ## Usage
 
 Run the code generator:
