@@ -229,9 +229,9 @@ def one_problem(prompt: str, config: Dict[str, Any], guides: Optional[str]= None
     Returns:
         Generated solution dictionary
     """
-    results = step(prompt, config, 0)
-
-    for lid in range(1,config.get('layers', 1)-1):
+    # results = step(prompt, config, 0)
+    results = None
+    for lid in range(len(config.get('layer_prompts', []))):
         results  = step(prompt, config, lid, prev_response=results)
         
     
@@ -486,12 +486,13 @@ def prepare_messages(question: str, file_names: Optional[list], system_prompt: O
 
 def process_problems(dataset: pd.DataFrame, config: Dict[str, Any]) -> pd.DataFrame:
     """Process multiple problems with parallel generation and batch verification."""
-    date = '2024-12-04' #datetime.now().date()
+    date = '2024-12-06' #datetime.now().date()
     
 
     for i in range(config.get("num_passes", 1)):
         solution_path = os.path.join(
             './outputs',
+            #f"{config['dataset']}_{config['model_name']}_nretry{config["max_calls"]}_nlayers{config["layers"]}_{date}_{i}.json"
             f"{config['dataset']}_{config['model_name']}_{date}_{i}.json"
         )
         config['solution_path'] = solution_path

@@ -4,7 +4,7 @@
   "max_tokens": 6000,
   "temperature": 0.9,
   "num_parallel_calls": 5,
-  "max_calls" : 2,
+  "max_calls" : 0,
   "verilator_endpoint" : "http://34.223.52.212:5005/test_runner_api",
   "batch_size" : 16,
   "dataset":"demo",
