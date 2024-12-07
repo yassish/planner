@@ -56,7 +56,7 @@ class APIModel:
         self,
         config: Dict[str, Any],
         api_key_path: str = './keys.json',
-        timeout: int = 60
+        timeout: int = 120
     ):
         try:
             with open(api_key_path, 'r') as file:
@@ -212,6 +212,7 @@ def fix_code_from_tests_failure(description, solution, error, config ):
 
         if response_fixed_code.startswith("```systemverilog"):
             response_fixed_code = response_fixed_code[13:]
+            
         solution = response_fixed_code
     except Exception as e:
         logger.debug(f"Failed to parse solution: {e}")
@@ -268,7 +269,7 @@ def create_dut_prompt(description: str, guides: Optional[str], pre_prompt) -> st
     {description}
     =========
     
-    Your generated code should work standlone without any import of libraries, and should include reference to any instanstiation. Make sure to check parametres and pins for all modues and their instantiation. Here are some general guidelines:
+    Your generated code should work standlone without any import of libraries, and should include reference to any instanstiation. Only include the code and no extra information. Make sure to check parametres and pins for all modues and their instantiation. Here are some general guidelines:
    ==========
    {guides}
    ==========
@@ -285,7 +286,7 @@ def create_dut_prompt(description: str, guides: Optional[str], pre_prompt) -> st
 
 
     class $ProblemSolutions(BaseModel):
-        solution: List[Solution] = Field(max_items=1, description="A list of possible solution to the problem. Make sure each solution fully addresses the problem rules and goals.")
+        solution: List[Solution] = Field(max_items=1, description="A list of possible solution to the problem. Make sure each solution fully addresses the problem rules and goals.Just Provide the code and no extra information.")
     ======
 
 
@@ -326,8 +327,6 @@ def prepre_df_to_test(df_dict, sol_column = 'dut', test_columns = ['tb']):
             ])
         # Convert the list of dictionaries to a DataFrame
         df = pd.DataFrame(data)
- 
-
 
 class BatchVerifier:
     """Handles batch verification of generated code."""
@@ -425,7 +424,7 @@ class BatchVerifier:
             logger.debug(f'Problem {row["name"]} has error: \n{error}')
             
             calls = 0
-            query = df_source[df_source['index'] == row['index']]['query'].values[0]
+            query = df_source[df_source['index'] == row['index']]['question'].values[0]
             while ("%Error" in error or "%Warning" in error) and calls < self.config.get('max_calls', 3):
                 logger.info('Regenerating code due to error')
                 
@@ -492,8 +491,8 @@ def process_problems(dataset: pd.DataFrame, config: Dict[str, Any]) -> pd.DataFr
     for i in range(config.get("num_passes", 1)):
         solution_path = os.path.join(
             './outputs',
-            #f"{config['dataset']}_{config['model_name']}_nretry{config["max_calls"]}_nlayers{config["layers"]}_{date}_{i}.json"
-            f"{config['dataset']}_{config['model_name']}_{date}_{i}.json"
+            f"{config['dataset']}_{config['model_name']}_nretry{config["max_calls"]}_nlayers{config["layers"]}_{date}_{i}.json"
+            # f"{config['dataset']}_{config['model_name']}_{date}_{i}.json"
         )
         config['solution_path'] = solution_path
         logger.info(f'Working on {config['solution_path']}')
@@ -568,8 +567,8 @@ def process_problems(dataset: pd.DataFrame, config: Dict[str, Any]) -> pd.DataFr
 def generate_single_solution(item: Dict, config: Dict[str, Any]) -> Dict:
     """Generate solution for a single problem."""
     item['ICL_filenames'] = None
-    prompt,_ = prepare_messages(item['query'], item['ICL_filenames'], config.get('system_prompt'))
-    
+    # prompt,_ = prepare_messages(item['query'], item['ICL_filenames'], config.get('system_prompt'))
+    prompt,_ = prepare_messages(item['question'], item['ICL_filenames'], config.get('system_prompt'))
     try:
         response, history = one_problem(prompt, config)  
         return {

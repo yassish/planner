@@ -3,15 +3,15 @@
   "num_passes": 10,
   "max_tokens": 6000,
   "temperature": 0.9,
-  "num_parallel_calls": 5,
+  "num_parallel_calls": 10,
   "max_calls" : 0,
   "verilator_endpoint" : "http://34.223.52.212:5005/test_runner_api",
   "batch_size" : 16,
-  "dataset":"demo",
-  "dataset_path": "./df_demo_20241113.pkl",
+  "dataset":"ChipEval",
+  "dataset_path": "./df_chipEval_20241101-filtered",
   "layers": 8,
   "seed": 42,
-  "model_name": "google_claude_3.5_sonnet_v2",
+  "model_name": "aws_sonnet35_v2",
   "layer_prompts":[
    "What is the main functionality of this hardware module? What is the high-level block diagram?"
   ,"What aspects should be parameterizable? What are reasonable default values?"

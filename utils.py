@@ -48,8 +48,10 @@ def load_yaml(response_text: str, keys_fix_yaml: List[str] = []) -> dict:
 
     This function attempts to parse the provided YAML text and returns the resulting dictionary. If parsing fails, it attempts to fix the YAML format.
     """
+    
     response_text = response_text.rstrip("` \n")
     response_text = response_text.removeprefix('```yaml').rstrip('`')
+
     # print(response_text)
     try:
         data = yaml.safe_load(response_text)
