@@ -12,7 +12,7 @@ def jsonl_gz_to_pickle(jsonl_gz_path, pickle_path):
             data.append(json.loads(line))
     data = pd.DataFrame(data)
     
-    data.rename(columns = {'prefix':'query'}, inplace=True)
+    data.rename(columns = {'prefix':'question'}, inplace=True)
     #print(data)
     # Save the parsed data to a .pkl file
     with open(pickle_path, 'wb') as f:
