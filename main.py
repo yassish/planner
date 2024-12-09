@@ -485,7 +485,7 @@ def prepare_messages(question: str, file_names: Optional[list], system_prompt: O
 
 def process_problems(dataset: pd.DataFrame, config: Dict[str, Any]) -> pd.DataFrame:
     """Process multiple problems with parallel generation and batch verification."""
-    date = '2024-12-06' #datetime.now().date()
+    date = datetime.now().date()
     
 
     for i in range(config.get("num_passes", 1)):
