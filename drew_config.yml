@@ -1,0 +1,25 @@
+{
+  "selected_indices": false,
+  "num_passes": 10,
+  "max_tokens": 6000,
+  "temperature": 0.9,
+  "num_parallel_calls": 2,
+  "max_calls": 0,
+  "verilator_endpoint": "http://34.223.52.212:5008/test_runner_api",
+  "batch_size": 1,
+  "dataset": "demo",
+  "dataset_path": "./df_drew_tests.pkl",
+  "layers": 8,
+  "seed": 42,
+  "model_name": "aws_sonnet35_v2",
+  "layer_prompts": [
+    "What is the main functionality of this hardware module? What is the high-level block diagram?",
+    "What aspects should be parameterizable? What are reasonable default values?",
+    "How will data be processed and transformed between input and output? What registers and combinational logic are needed?",
+    "What are the clocking, latency and throughput requirements? Are there specific timing constraints? What signals need to be reset? Should reset be synchronous or asynchronous?",
+    "What test scenarios are needed? How will assertions be used to catch issues?",
+    "What distinct functional blocks or submodules would logically divide this design? For each submodule identified, what specific task does it perform?",
+    "Write a System verilog code for each of the submodules specified. What are the critical interfaces between these submodules?"
+  ],
+  "pre_prompt": "Integrate the submodules into one working module in SystemVerilog. Include all submodules in your final answer as one workingf module. Leave no comment referencing previous answers."
+}
