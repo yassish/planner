@@ -1,8 +1,4 @@
 
-
-
-
-
 """
 System Verilog Code Generator Framework
 
@@ -304,29 +300,29 @@ def create_dut_prompt(description: str, guides: Optional[str], pre_prompt) -> st
 
 
 def prepre_df_to_test(df_dict, sol_column = 'dut', test_columns = ['tb']):
-        # # Assuming df_dict is defined and data is initialized
-        data = []
-        random_selected = []
-        for k, v in df_dict.items():
-            # Get the generated solutions and tests once
-            generated_solutions = v[sol_column]
-            generated_tests = []
-            
-            tb = v['tb']
-            name = v['name']
-            
-            data.extend([
-            {
-                'solution_id': idx_sol,
-                'dut': solution,
-                'index': int(k),
-                'tb': tb,
-                'name': name
-            }
-            for (idx_sol, solution) in product(enumerate(generated_solutions))
-            ])
-        # Convert the list of dictionaries to a DataFrame
-        df = pd.DataFrame(data)
+    # # Assuming df_dict is defined and data is initialized
+    data = []
+    random_selected = []
+    for k, v in df_dict.items():
+        # Get the generated solutions and tests once
+        generated_solutions = v[sol_column]
+        generated_tests = []
+
+        tb = v['tb']
+        name = v['name']
+
+        data.extend([
+        {
+            'solution_id': idx_sol,
+            'dut': solution,
+            'index': int(k),
+            'tb': tb,
+            'name': name
+        }
+        for (idx_sol, solution) in product(enumerate(generated_solutions))
+        ])
+    # Convert the list of dictionaries to a DataFrame
+    df = pd.DataFrame(data)
 
 class BatchVerifier:
     """Handles batch verification of generated code."""
@@ -334,6 +330,7 @@ class BatchVerifier:
     def __init__(self, config: Dict[str, Any]):
         self.config = config
         self.batch_size = config.get('batch_size', 10)
+        self.eda_flag = config.get('eda', False)
         self.api_key = self._load_api_key()
         self.verilator_endpoint = config.get('verilator_endpoint', 'http://default-verification-endpoint')
 
@@ -349,9 +346,13 @@ class BatchVerifier:
             tests.append(json.dumps(item))
         return tests
 
-    def verify_batch(self, df_batch: pd.DataFrame, cols: List[str] = ['dut', 'tb']) -> pd.DataFrame:
+    def verify_batch(self, df_batch: pd.DataFrame, cols: List[str] = ['dut', 'tb', 'tb_name'], eda_flag = True) -> pd.DataFrame:
         """Verify a batch of generated code."""
         df_source = df_batch[['index', 'name'] + cols].copy()
+        if eda_flag:
+            for i, row in df_source.iterrows():
+                df_source.loc[i, 'dut'] = [{"name" : 'dut.sv', "content" : row["dut"]}]
+
         tests = self.prepare_tests_for_api(df_source)
         
         try:
@@ -365,7 +366,8 @@ class BatchVerifier:
                     'tests': tests,
                     'sim_tool': "verilator",
                     'compile_only': False,
-                    'copy_all_fields': True
+                    'copy_all_fields': True, 
+                    'eda' : eda_flag
                 },
                 timeout=2000
             )
@@ -399,13 +401,22 @@ class BatchVerifier:
         n_batches = int(np.ceil(len(df) / self.batch_size))
         logger.info(f"Processing {n_batches} verification batches")
         results = []
-
+        df = df.set_index('index')
+        df.sort_index(inplace=True)
+        df_source.sort_index(inplace=True)
+        df_source = df_source.set_index('index')
+        # print(df_source)
+        # print(df)
+        df['tb_name'] = df_source['tb_name']
+        df.reset_index(inplace=True)
+        df_source.reset_index(inplace=True)
+        # print(df.head())
         for i in tqdm(range(n_batches)):
             batch_start = i * self.batch_size
             batch_end = min((i + 1) * self.batch_size, len(df))
             df_batch = df[batch_start:batch_end].copy()
             
-            result = self.verify_batch(df_batch)
+            result = self.verify_batch(df_batch, eda_flag =self.eda_flag)
             if not result.empty:
                 result = self.fix_failed_code(result, df_source)
                 results.append(result)
@@ -485,7 +496,7 @@ def prepare_messages(question: str, file_names: Optional[list], system_prompt: O
 
 def process_problems(dataset: pd.DataFrame, config: Dict[str, Any]) -> pd.DataFrame:
     """Process multiple problems with parallel generation and batch verification."""
-    date = datetime.now().date()
+    date = '2024-12-11' #datetime.now().date()
     
 
     for i in range(config.get("num_passes", 1)):
@@ -537,8 +548,8 @@ def process_problems(dataset: pd.DataFrame, config: Dict[str, Any]) -> pd.DataFr
             current_results = utils.load_json(solution_path)
             current_data = pd.DataFrame(current_results)
             # Find items needing verification
-            to_test = [item['index'] for item in current_results 
-               if 'pass' not in item or item['pass'] is None]
+            to_test = [item['index'] for item in current_results]
+               # if 'pass' not in item or item['pass'] is None]
             df_to_verify = current_data[current_data['index'].isin(to_test)]
                 
             logger.info(f'Number of problems to verify {len(df_to_verify)}')
