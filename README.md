@@ -1,4 +1,4 @@
-# SystemVerilog Code Generator Framework
+# Chain of questions: guiding llms to write the correct dut
 
 A Python-based framework for generating and verifying SystemVerilog code using Language Models (LLM). Supports parallel code generation and automated verification through remote Verilator testing.
 
