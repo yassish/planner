@@ -5,7 +5,7 @@
   "temperature": 0.9,
   "num_parallel_calls": 10,
   "eda": true,
-  "max_calls": 4,
+  "max_calls": 0,
   "verilator_endpoint": "http://34.223.52.212:5008/test_runner_api",
   "batch_size": 4,
   "dataset": "demo",
