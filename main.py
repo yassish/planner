@@ -496,7 +496,10 @@ def prepare_messages(question: str, file_names: Optional[list], system_prompt: O
 
 def process_problems(dataset: pd.DataFrame, config: Dict[str, Any]) -> pd.DataFrame:
     """Process multiple problems with parallel generation and batch verification."""
-    date = '2024-12-11' #datetime.now().date()
+    date = datetime.now().date()
+
+    ###print(f'{config=}')
+    assert config.get('layers', 0) == len(config.get('layer_prompts', []))
 
 
     for i in range(config.get("num_passes", 1)):
@@ -505,6 +508,8 @@ def process_problems(dataset: pd.DataFrame, config: Dict[str, Any]) -> pd.DataFr
             f"{config['dataset']}_{config['model_name']}_nretry{config["max_calls"]}_nlayers{config["layers"]}_{date}_{i}.json"
             # f"{config['dataset']}_{config['model_name']}_{date}_{i}.json"
         )
+        ###print(f'{solution_path=}')
+
         config['solution_path'] = solution_path
         logger.info(f'Working on {config['solution_path']}')
         try:

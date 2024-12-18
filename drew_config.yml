@@ -10,7 +10,7 @@
   "batch_size": 4,
   "dataset": "demo",
   "dataset_path": "./df_drew_tests.pkl",
-  "layers": 8,
+  "layers": 4,
   "seed": 42,
   "model_name": "aws_sonnet35_v2",
   "layer_prompts": [
