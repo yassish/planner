@@ -481,7 +481,7 @@ def prepare_messages(question: str, file_names: Optional[list], system_prompt: O
             with open(file_name, 'r') as file:
                 ICL += file.read()
         ICL = '\n'.join(ICL)
-        ICL = ' Here are sonme usueful information to write the code :\n' + ICL + '\n'
+        ICL = ' Here is some usueful information to write the code :\n' + ICL + '\n'
 
     index = question.find('--------------------------------------------------------------\n')
     helper = question[index:]
