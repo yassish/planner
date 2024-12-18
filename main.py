@@ -3,7 +3,7 @@
 System Verilog Code Generator Framework
 
 This module provides a framework for generating code using Language Models and verifying it in batches.
-This code generates duts for specific query and batch test versis verilator 
+This code generates duts for specific query and batch test versis verilator
 
 Requirements:
 - Python 3.7+
@@ -39,7 +39,7 @@ logger = logging.getLogger(__name__)
 class APIModel:
     """
     Handles communication with the LLM API for code generation.
-    
+
     Attributes:
         config (dict): Configuration parameters for the model
         api_key (str): API authentication key
@@ -47,7 +47,7 @@ class APIModel:
         model (str): Name of the model to use
         timeout (int): Request timeout in seconds
     """
-    
+
     def __init__(
         self,
         config: Dict[str, Any],
@@ -59,12 +59,12 @@ class APIModel:
                 api_keys = json.load(file)
         except FileNotFoundError:
             raise FileNotFoundError(f"API key file not found at {api_key_path}")
-            
+
         self.config = config
         self.api_key = api_keys.get("unified_api_key")
         if not self.api_key:
             raise ValueError("API key not found in keys file")
-            
+
         self.endpoint = 'http://54.186.24.124:5003/llm_unified_api'
         self.model = config['model_name']
         self.timeout = timeout
@@ -72,11 +72,11 @@ class APIModel:
     def generate(self, messages: List[Dict[str, str]], generation: int = 1) -> tuple:
         """
         Generate responses using the LLM API.
-        
+
         Args:
             messages: List of message dictionaries with 'role' and 'content'
             generation: Number of responses to generate
-            
+
         Returns:
             tuple: (model_name, list of responses)
         """
@@ -99,11 +99,11 @@ class APIModel:
                     },
                     timeout=self.timeout
                 )
-                
+
                 if response.ok:
                     response_json = response.json()
                     if response_json.get('llm_api_call_success') == 'True':
-                        
+
                         response_text = response_json.get('response')
                         break
 
@@ -119,29 +119,29 @@ class APIModel:
                 error_details = response.json()
             except:
                 error_details = "Unknown error"
-            raise Exception(f"API request failed after all retries. Details: {error_details}")    
+            raise Exception(f"API request failed after all retries. Details: {error_details}")
         return self.model, response_text, messages
 
 def step(prompt: str, config: Dict[str, Any], layer_id: Optional[int] = None, prev_response: Optional[str] = None) -> List:
     """
     Execute one step of the generation process.
-    
+
     Args:
         prompt: Input prompt for generation
         config: Configuration dictionary
         prev_response: Previous step's response if any
-        
+
     Returns:
         List of generated responses
     """
     model = APIModel(config)
     messages = []
     if prev_response:
-       
+
         messages.append({
             "role": "user",
             "content": prev_response + config['layer_prompts'][layer_id] + '\n [NEW STEP]\n '
-                                                 
+
         })
     else:
         messages.append({
@@ -151,7 +151,7 @@ def step(prompt: str, config: Dict[str, Any], layer_id: Optional[int] = None, pr
     _, response, previous_messages = model.generate(
         messages
     )
-    return  (previous_messages[-1]['content'] + 
+    return  (previous_messages[-1]['content'] +
             '\n' +
             response)
 def fix_code_from_tests_failure(description, solution, error, config ):
@@ -173,8 +173,8 @@ def fix_code_from_tests_failure(description, solution, error, config ):
         {error}
         =============
 
-        Using the information above, your goal is to generate a fixed code, that will correctly solve the error. 
-        return the complete module dut and do not duplicate any definition. The final code should include all modules originally provided.     
+        Using the information above, your goal is to generate a fixed code, that will correctly solve the error.
+        return the complete module dut and do not duplicate any definition. The final code should include all modules originally provided.
         The output must be a YAML object equivalent to type $FixedCode, according to the following Pydantic definitions:
         =====
         class FixedCode(BaseModel):
@@ -191,38 +191,38 @@ def fix_code_from_tests_failure(description, solution, error, config ):
         Answer:
         ```yaml"""
     messages = (
-                [  
+                [
                     {"role": "user", "content": fix_code_prompt},
                 ]
             )
     model = APIModel(config)
-    
+
     _, response_fixed_code, messages = model.generate(
         messages
     )
 
     try:
         response_fixed_code = utils.load_yaml(response_fixed_code,keys_fix_yaml=["fixed_code:"])['fixed_code']
-    
+
         response_fixed_code = response_fixed_code.rstrip("'` \n") # remove trailing spaces and newlines from yaml response
 
         if response_fixed_code.startswith("```systemverilog"):
             response_fixed_code = response_fixed_code[13:]
-            
+
         solution = response_fixed_code
     except Exception as e:
         logger.debug(f"Failed to parse solution: {e}")
     return solution
 
- 
+
 def one_problem(prompt: str, config: Dict[str, Any], guides: Optional[str]= None) -> Dict:
     """
     Process a single problem through all generation layers.
-    
+
     Args:
         prompt: Problem description
         config: Configuration dictionary
-        
+
     Returns:
         Generated solution dictionary
     """
@@ -230,10 +230,10 @@ def one_problem(prompt: str, config: Dict[str, Any], guides: Optional[str]= None
     results = None
     for lid in range(len(config.get('layer_prompts', []))):
         results  = step(prompt, config, lid, prev_response=results)
-        
-    
+
+
     dut_generation_prompt = create_dut_prompt(prompt, guides, config['pre_prompt'])
-    
+
     final_messages = [{
         "role": "user",
         "content": utils.getFinalPrompt(dut_generation_prompt, [results])
@@ -251,30 +251,30 @@ def one_problem(prompt: str, config: Dict[str, Any], guides: Optional[str]= None
     except Exception as e:
         logger.error(f"Failed to parse solution: {e}")
         raise ValueError(f"No solution for description: {e}")
-        
+
     return solution, messages[-1]['content']
 
 def create_dut_prompt(description: str, guides: Optional[str], pre_prompt) -> str:
     """Create the DUT generation prompt with proper formatting."""
     with open('guidelines.txt', 'r') as file:
         guides =  file.read()
-    guides = f"""{guides}""" 
+    guides = f"""{guides}"""
     prompt = pre_prompt + f'''
      Here is the module description:
     =========
     {description}
     =========
-    
+
     Your generated code should work standlone without any import of libraries, and should include reference to any instanstiation. Only include the code and no extra information. Make sure to check parametres and pins for all modues and their instantiation. Here are some general guidelines:
    ==========
    {guides}
    ==========
    The code should be inside a module called `dut`:
-    
+
     module dut (...);
        ...
     endmodule
-    
+
     The output must be a YAML object equivalent to type $ProblemSolutions, according to the following Pydantic definitions in $ProblemSolutions:
     ======
     class Solution(BaseModel):
@@ -326,7 +326,7 @@ def prepre_df_to_test(df_dict, sol_column = 'dut', test_columns = ['tb']):
 
 class BatchVerifier:
     """Handles batch verification of generated code."""
-    
+
     def __init__(self, config: Dict[str, Any]):
         self.config = config
         self.batch_size = config.get('batch_size', 10)
@@ -354,7 +354,7 @@ class BatchVerifier:
                 df_source.loc[i, 'dut'] = [{"name" : 'dut.sv', "content" : row["dut"]}]
 
         tests = self.prepare_tests_for_api(df_source)
-        
+
         try:
             response = requests.post(
                 self.verilator_endpoint,
@@ -366,12 +366,12 @@ class BatchVerifier:
                     'tests': tests,
                     'sim_tool': "verilator",
                     'compile_only': False,
-                    'copy_all_fields': True, 
+                    'copy_all_fields': True,
                     'eda' : eda_flag
                 },
                 timeout=2000
             )
-            
+
             if not response.ok:
                 logger.error('Verification API failed!')
                 logger.error(response.content)
@@ -379,7 +379,7 @@ class BatchVerifier:
 
             results = json.loads(response.content)['results']
             return self._convert_results_to_df(results)
-            
+
         except Exception as e:
             logger.error(f"Verification failed: {e}")
             return pd.DataFrame()
@@ -415,12 +415,12 @@ class BatchVerifier:
             batch_start = i * self.batch_size
             batch_end = min((i + 1) * self.batch_size, len(df))
             df_batch = df[batch_start:batch_end].copy()
-            
+
             result = self.verify_batch(df_batch, eda_flag =self.eda_flag)
             if not result.empty:
                 result = self.fix_failed_code(result, df_source)
                 results.append(result)
-                
+
 
         return pd.concat(results) if results else pd.DataFrame()
 
@@ -433,15 +433,15 @@ class BatchVerifier:
 
             error = row['stderr']
             logger.debug(f'Problem {row["name"]} has error: \n{error}')
-            
+
             calls = 0
             query = df_source[df_source['index'] == row['index']]['question'].values[0]
             while ("%Error" in error or "%Warning" in error) and calls < self.config.get('max_calls', 3):
                 logger.info('Regenerating code due to error')
-                
+
                 # Implement your fix_code_from_tests_failure logic here
                 solution = fix_code_from_tests_failure(query, row['dut'], error, self.config)
-                
+
                 df = results.loc[[i], ['index', 'tb', 'name']].copy()
                 df['dut'] = solution
 
@@ -452,7 +452,7 @@ class BatchVerifier:
                 stdout = result['stdout'].values[0]
                 error =  stderr if stderr != '' else stdout
                 calls += 1
-                
+
                 if result['pass'].values[0]:
                     results.loc[i] = result.iloc[0]
                     print(f'{results.loc[i, 'dut'] ==  result['dut'].values[0]}')
@@ -466,23 +466,23 @@ class BatchVerifier:
 def prepare_messages(question: str, file_names: Optional[list], system_prompt: Optional[str]) -> List[Dict[str, str]]:
     """
     Prepare messages for the API request.
-    
+
     Args:
         question: Problem description
         system_prompt: Optional system prompt
-        
+
     Returns:
         List of formatted messages
     """
     ICL = ''
     if file_names:
-        
+
         for file in file_names:
             with open(file_name, 'r') as file:
                 ICL += file.read()
         ICL = '\n'.join(ICL)
         ICL = ' Here are sonme usueful information to write the code :\n' + ICL + '\n'
-            
+
     index = question.find('--------------------------------------------------------------\n')
     helper = question[index:]
     format_prompt = ICL + f'''Problem description:
@@ -497,7 +497,7 @@ def prepare_messages(question: str, file_names: Optional[list], system_prompt: O
 def process_problems(dataset: pd.DataFrame, config: Dict[str, Any]) -> pd.DataFrame:
     """Process multiple problems with parallel generation and batch verification."""
     date = '2024-12-11' #datetime.now().date()
-    
+
 
     for i in range(config.get("num_passes", 1)):
         solution_path = os.path.join(
@@ -536,11 +536,11 @@ def process_problems(dataset: pd.DataFrame, config: Dict[str, Any]) -> pd.DataFr
                 try:
                     result = future.result()
                     existing_results.append(result)
-                    
+
                     # Update file with new result while preserving existing data
                     with open(solution_path, 'w') as json_file:
                         json.dump(existing_results, json_file, indent=2)
-                     
+
                 except Exception as e:
                     logger.error(f"Generation failed: {e}")
         final_results = []
@@ -551,7 +551,7 @@ def process_problems(dataset: pd.DataFrame, config: Dict[str, Any]) -> pd.DataFr
             to_test = [item['index'] for item in current_results]
                # if 'pass' not in item or item['pass'] is None]
             df_to_verify = current_data[current_data['index'].isin(to_test)]
-                
+
             logger.info(f'Number of problems to verify {len(df_to_verify)}')
             verifier = BatchVerifier(config)
             verified_results = verifier.verify_in_batches(df_to_verify, dataset)
@@ -559,8 +559,8 @@ def process_problems(dataset: pd.DataFrame, config: Dict[str, Any]) -> pd.DataFr
                 # Update existing results with verification results
                 for idx, row in verified_results.iterrows():
                     result_idx = next(
-                        (i for i, r in enumerate(current_results) 
-                        if r['index'] == row['index']), 
+                        (i for i, r in enumerate(current_results)
+                        if r['index'] == row['index']),
                         None
                     )
                     if result_idx is not None:
@@ -570,7 +570,7 @@ def process_problems(dataset: pd.DataFrame, config: Dict[str, Any]) -> pd.DataFr
                 with open(solution_path, 'w') as json_file:
                     json.dump(current_results, json_file, indent=2)
 
-                final_results.extend(current_results) 
+                final_results.extend(current_results)
         except Exception as e:
             logger.error(f"Verification failed: {e}")
     return pd.DataFrame(final_results) if final_results else pd.DataFrame()
@@ -581,7 +581,7 @@ def generate_single_solution(item: Dict, config: Dict[str, Any]) -> Dict:
     # prompt,_ = prepare_messages(item['query'], item['ICL_filenames'], config.get('system_prompt'))
     prompt,_ = prepare_messages(item['question'], item['ICL_filenames'], config.get('system_prompt'))
     try:
-        response, history = one_problem(prompt, config)  
+        response, history = one_problem(prompt, config)
         return {
             'index': item['index'],
             'dut': response,
@@ -596,24 +596,24 @@ def generate_single_solution(item: Dict, config: Dict[str, Any]) -> Dict:
 def main():
     """Main entry point for the script."""
     import argparse
-    
+
     parser = argparse.ArgumentParser(description="Code generation and verification framework")
     parser.add_argument("--config", type=str, required=True, help="Path to configuration file")
     args = parser.parse_args()
-    
+
     try:
         with open(args.config, 'r') as f:
             config = json.load(f)
-            
+
         df = pd.read_pickle(config['dataset_path'])
         if config.get('selected_indices'):
             df = df.iloc[config['selected_indices']].reset_index(drop=True)
 
         results = process_problems(df, config)
-        
+
         if not results.empty:
             logger.info("Processing completed successfully")
-            
+
     except Exception as e:
         logger.error(f"Script execution failed: {e}")
         raise

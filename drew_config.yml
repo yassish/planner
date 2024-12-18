@@ -1,26 +1,23 @@
 {
   "selected_indices": false,
-  "num_passes": 10,
+  "num_passes": 1,
   "max_tokens": 6000,
   "temperature": 0.9,
   "num_parallel_calls": 10,
-  "eda": true, 
-  "max_calls": 0,
+  "eda": true,
+  "max_calls": 4,
   "verilator_endpoint": "http://34.223.52.212:5008/test_runner_api",
-  "batch_size": 1,
+  "batch_size": 4,
   "dataset": "demo",
   "dataset_path": "./df_drew_tests.pkl",
   "layers": 8,
   "seed": 42,
   "model_name": "aws_sonnet35_v2",
   "layer_prompts": [
-    "What is the main functionality of this hardware module? What is the high-level block diagram?",
-    "What aspects should be parameterizable? What are reasonable default values?",
-    "How will data be processed and transformed between input and output? What registers and combinational logic are needed?",
-    "What are the clocking, latency and throughput requirements? Are there specific timing constraints? What signals need to be reset? Should reset be synchronous or asynchronous?",
-    "What test scenarios are needed? How will assertions be used to catch issues?",
-    "What distinct functional blocks or submodules would logically divide this design? For each submodule identified, what specific task does it perform?",
-    "Write a System verilog code for each of the submodules specified. What are the critical interfaces between these submodules?"
+    "Regardless of your understanding of the problem, can you first construct pseudo code and boilerplate for this module(s) that exactly matches the names given in the problem? And leave the remaining as commented placeholders?",
+    "If the problem appears to have multiple parts, is it possible to first solve one of the parts? If so, you can attempt coding that part first, and leave the remaining parts as commented placeholders?",
+    "If there are any remaining parts still as commented placeholders, can you attempt to solve those? We should complete code at this point.",
+    "Can you check your work? For example, for each line of code, can you check this against any language rules you are aware of? For each signal (wire, reg, logic, etc) can you confirm all of its uses are correct given langauge rules? Correct any mistakes."
   ],
-  "pre_prompt": "Integrate the submodules into one working module in SystemVerilog. Include all submodules in your final answer as one workingf module. Leave no comment referencing previous answers."
+  "pre_prompt": "One last time, check your work for syntax errors (each line) and check every signal is legally used. Correct any mistakes."
 }
