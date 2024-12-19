@@ -1,4 +1,5 @@
 {
+  "general__comment__this__file": "It might end in .yml, but main.py will read it as json, because reasons.",
   "selected_indices": false,
   "num_passes": 1,
   "max_tokens": 6000,
@@ -6,18 +7,24 @@
   "num_parallel_calls": 10,
   "eda": true,
   "max_calls": 0,
+  "max_calls__comment": "it must be 0 for eda mode. Also 'eda' is set here in addition to it being set per test in df_drew_tests.pkl, because reasons.",
   "verilator_endpoint": "http://34.223.52.212:5008/test_runner_api",
   "batch_size": 4,
   "dataset": "demo",
   "dataset_path": "./df_drew_tests.pkl",
-  "layers": 4,
-  "seed": 42,
+  "layers": 8,
+  "layers___comment": "Just an FYI here, 'layers:8' must match the number of entries in array 'layers_prompts', because reasons.",
+  "seed": 1234,
   "model_name": "aws_sonnet35_v2",
   "layer_prompts": [
-    "Regardless of your understanding of the problem, can you first construct pseudo code and boilerplate for this module(s) that exactly matches the names given in the problem? And leave the remaining as commented placeholders?",
-    "If the problem appears to have multiple parts, is it possible to first solve one of the parts? If so, you can attempt coding that part first, and leave the remaining parts as commented placeholders?",
+    "Hey, so I have given you an initial problem, and we're going to work on this through steps, but this is also a fully automated conversation on my end so I'll be ignoring any of your questions or feedback (which sucks for you!) so bear with me. Do not generate any code yet",
+    "Regardless of your understanding of the problem, can you first construct pseudo code and boilerplate for this module(s) that exactly matches the signal names given in the problem that are required? And leave the remaining as commented placeholders?",
+    "Can we fill in parts of the pseudo code so the code is not functional yet, but will at minimum compile (to the best of your knowledge, I know you don't have a compiler on hand). For example, if you have a pseudo code section such as '/* TODO: assign these outputs */' please assign them in an always_comb or always_ff block for now, to legal values such as '0.",
+    "Let's try solving one of the pseudo code parts.",
+    "Let's try solving another pseudo code part (if there are still any)",
+    "Let's try solving another pseudo code part (if there are still any)",
     "If there are any remaining parts still as commented placeholders, can you attempt to solve those? We should complete code at this point.",
-    "Can you check your work? For example, for each line of code, can you check this against any language rules you are aware of? For each signal (wire, reg, logic, etc) can you confirm all of its uses are correct given langauge rules? Correct any mistakes."
+    "Can you check your work? For example, for each line of code, can you check this against any language rules you are aware of? For each signal (wire, reg, logic, etc) can you confirm all of its uses are correct given langauge rules? For example, if you have any other module instances, Verilog/SystemVerilog generally require that all inputs and outputs are connected - so if an input is not used it must be connected to a signal tied to a static value: '.some_input(tie0_value)', and an output must be in the port list connected to open: '.some_output()' Correct any mistakes you observe."
   ],
-  "pre_prompt": "One last time, check your work for syntax errors (each line) and check every signal is legally used. Correct any mistakes."
+  "pre_prompt": "Finally, can we get the complete module returned?"
 }
